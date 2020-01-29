@@ -50,9 +50,9 @@ class Food(pygame.sprite.Sprite):
 	def setNewPos(self, snake_coord):
 		coordFoodValid = False
 		while not coordFoodValid:
-			self.rect.x = random.randrange(SIZE[0] - self.largeur)
-			self.rect.y = random.randrange(SIZE[1] - self.largeur)
-			coordTmp = self.rect.x, self.rect.y
+			self.x = random.randrange(1,7)
+			self.y = random.randrange(1,7)
+			coordTmp = self.x, self.y
 			if coordTmp not in snake_coord:
 				coordFoodValid = True
 
@@ -86,48 +86,63 @@ class Snake(object):
 		for cell in self.coord:
 			cell.kill()
 		
-	def grow(self, allSpritesList):
+	def grow(self):
 		newCell = Cell(self.previousTail[0], self.previousTail[1])
 		self.coord.append(newCell)
-		self.sprite_snake_list.add(newCell)
-		allSpritesList.add(newCell)
+		#self.sprite_snake_list.add(newCell)
+		#allSpritesList.add(newCell)
 		
 
 	def createTail(self, longueur):
-		tmp = self.startX
+		tmp = self.x
 		for i in range (0,longueur):
-			cell = Cell(tmp- DIMENSION_CELL - self.spaceBetweenCells, self.startY)
-			tmp = tmp - DIMENSION_CELL - self.spaceBetweenCells
+			cell = Cell(tmp- 1, self.y)
+			tmp = tmp - 1
 			self.coord.append(cell)
-			self.sprite_snake_list.add(cell)
+			#self.sprite_snake_list.add(cell)
 			#all_sprites_list.add(cell)
 		#print self
 
-#wall_y_up = [0,1,2,3,4,5,6,7]
-#wall_y_down = [112,113,114,115,116,117,118]
-
-
 	def isAtWall(self):
-		if self.x > 8 and self.direction == "right":
-			self.x = 8
+		if self.head.x > 8 and self.direction == "right":
+			self.head.x = 8
 			self.direction = "left"
 			return True
-		elif self.x < 0 and self.direction == "left":
-			self.x = 0
+		elif self.head.x < 0 and self.direction == "left":
+			self.head.x = 0
 			self.direction = "right" 
 			return True
-		elif self.y < 0 and self.direction == "up":
-			self.y = 0
+		elif self.head.y < 0 and self.direction == "up":
+			self.head.y = 0
 			self.direction = "down"
 			return True
-		elif self.y > 8 and self.direction == "down":
-			self.y = 8
+		elif self.head.y > 8 and self.direction == "down":
+			self.head.y = 8
 			self.direction = "up"
 			return True
 		else:
 			return False
 		
 	def update(self):
+
+		#update tail
+		self.previousTail = (self.coord[len(self.coord) -1].x, self.coord[len(self.coord) -1].y)  
+		for i in range(len(self.coord)-1,0,-1):
+			self.coord[i].x = self.coord[i-1].x
+			self.coord[i].y = self.coord[i-1].y 
+
+		# update position of head of snake
+		if not self.isAtWall():
+	 		if self.direction == "left":
+	 			self.coord[0].x = self.coord[0].x - self.step
+	 		if self.direction == "right":
+	 			self.coord[0].x = self.coord[0].x + self.step
+	 		if self.direction == "down":
+	 			self.coord[0].y = self.coord[0].y + self.step
+	 		if self.direction == "up":
+	 			self.coord[0].y = self.coord[0].y - self.step
+
+ 		'''
 		if not self.isAtWall():
 			if self.direction == "left":
 	 			self.x = self.x - self.step
@@ -137,7 +152,7 @@ class Snake(object):
 	 			self.y = self.y + self.step
 	 		if self.direction == "up":
 	 			self.y = self.y - self.step
-			
+		'''
  	def __str__(self):
  		tmp = ""
  		for i in range(0,len(self.coord)-1):
@@ -146,13 +161,11 @@ class Snake(object):
 
 def main():
 
-	x = 0
-	y = 0
-
 	pygame.init()
 	mode = None
 
-	snake = Snake(x, y, "right")
+	snake = Snake()
+	snake.createTail(2)
 	food = Food(7,7)
 	score = Score()
 
@@ -178,7 +191,9 @@ def main():
 
 		#but = lp.ButtonStateRaw()
 		but = lp.ButtonStateXY()
-		lp.LedCtrlXY(snake.x, snake.y, 0, 3)
+		for coord in snake.coord:
+			#lp.LedCtrlXY(snake.x, snake.y, 0, 3)
+			lp.LedCtrlXY(coord.x, coord.y, 0, 3)
 		lp.LedCtrlXY(food.x, food.y, 3, 0)
 		'''
 		LED functions
@@ -200,13 +215,7 @@ def main():
 		ButtonStateXY()
 		ButtonFlush()
 		'''		
-		'''
-		if (lp.ButtonStateXY() == ([0 ,1 ,True])):
-			print("button appuye 0,0")
-			app_done = True
-			break
-		'''
-
+		
 
 		#butHit = 10
 		if but != []:
@@ -216,58 +225,55 @@ def main():
 				break
 			print( butHit, " event: ", but )
 
-
-
-
 		#print( butHit, " event: ", but )
 		#if (but == ([0, True])):
 		if (but == ([0, 1, True])):
 			print("button appuye 0,0")
 			break
-			#lp.Reset() # turn all LEDs off
-			#lp.Close() # close the Launchpad (will quit with an error due to a PyGame bug)
-			#exit()
-
+			
 		#up 200 112
-		if (but == ([0, 8, True])):
+		if (but == ([0, 0, True])):
 			snake.direction = "up"
 			print("button appuye 200")
 			#snake.y = snake.y -1
 
 		#down 201 113
-		elif (but == ([1, 8, True])):
+		elif (but == ([1, 0, True])):
 			snake.direction = "down"
 			print("button appuye 201")
 			#snake.y = snake.y + 1
 
 		#left 202 114
-		elif (but == ([2, 8, True])):
+		elif (but == ([2, 0, True])):
 			snake.direction = "left"
 			print("button appuye 202")
 			#snake.x = snake.x -1
 		#right 203 115
-		elif (but == ([3, 8, True])):
+		elif (but == ([3, 0, True])):
 			snake.direction = "right"
 			print("button appuye 203")
 			#snake.x = snake.x + 1
 
-		if(snake.x == food.x and snake.y == food.y):
+		#collision
+		if(snake.head.x == food.x and snake.head.y == food.y):
 			score.pointage = score.pointage + 1
-			lp.LedCtrlXY(score.x, score.pointage, 0, 3)
+			#lp.LedCtrlXY(score.x, score.pointage, 0, 3)
+			snake.grow()
+			food.setNewPos(snake.coord)
 		
 		snake.update()
 
 		print(snake.x, snake.y, snake.direction)
 
 		clock.tick(4)
-		#time.wait(1)
-		#lp.ButtonFlush()
+		
 		lp.Reset() # turn all LEDs off
 
 	lp.ButtonFlush()
+	lp.LedCtrlString(str(score.pointage), 0, 3, -1 )
 	lp.Reset() # turn all LEDs off
 	lp.Close() # close the Launchpad (will quit with an error due to a PyGame bug)
-	print("penis")
+	print("Bye!")
 
 	
 if __name__ == '__main__':
